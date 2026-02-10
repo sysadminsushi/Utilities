@@ -14,7 +14,7 @@
     The collection of objects to be exported to the CSV.
 
 .PARAMETER ReportName
-    An optional string to identify the report type (e.g., "SharedMailbox", "UserAudit").
+    An optional string to identify the report type (e.g., "SharedMailboxes", "UserAudit").
     This is inserted into the filename.
 
 .EXAMPLE
