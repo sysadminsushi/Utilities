@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     A standalone utility for management reporting. It ensures the target directory exists,
-    generates a unique filename using a high-precision timestamp, and exports
-    the provided data array to a CSV.
+    generates a unique filename using an optional report name and a high-precision 
+    timestamp, and exports the provided data array to a CSV.
 
 .PARAMETER LogDirectory
     The folder where the CSV will be saved. Created automatically if missing.
@@ -13,8 +13,12 @@
 .PARAMETER DataArray
     The collection of objects to be exported to the CSV.
 
+.PARAMETER ReportName
+    An optional string to identify the report type (e.g., "SharedMailbox", "UserAudit").
+    This is inserted into the filename.
+
 .EXAMPLE
-    Export-ManagementReport -LogDirectory "C:\Logs\Reports" -DataArray $Results
+    Export-ManagementReport -LogDirectory "C:\Logs" -DataArray $Results -ReportName "SharedMailboxes"
 
 .NOTES
     Author: sysadminsushi
@@ -24,19 +28,28 @@ function Export-ManagementReport {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$LogDirectory,
-        [Parameter(Mandatory)][array]$DataArray
+        [Parameter(Mandatory)][array]$DataArray,
+        [Parameter(Mandatory=$false)][string]$ReportName
     )
 
-    # Ensure the directory exists without throwing an error if it already exists
+    # Ensure the directory exists
     if (-not (Test-Path $LogDirectory)) { 
         New-Item -Path $LogDirectory -ItemType Directory -Force | Out-Null 
     }
 
     # Generate Timestamped Filename
     $UniqueTimeStamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $ReportingPath = Join-Path $LogDirectory "Management_Report_$UniqueTimeStamp.csv"
+    
+    # Logic: If ReportName is provided, include it; otherwise, just use the timestamp.
+    if (-not [string]::IsNullOrWhiteSpace($ReportName)) {
+        $FileName = "Management_Report_$($ReportName)_$UniqueTimeStamp.csv"
+    } else {
+        $FileName = "Management_Report_$UniqueTimeStamp.csv"
+    }
 
-    # Logic Execution & Export
+    $ReportingPath = Join-Path $LogDirectory $FileName
+
+    # Logic Execution & Export to csv
     try {
         if ($null -ne $DataArray -and $DataArray.Count -gt 0) {
             $DataArray | Export-Csv -Path $ReportingPath -NoTypeInformation -Encoding UTF8 -Force
