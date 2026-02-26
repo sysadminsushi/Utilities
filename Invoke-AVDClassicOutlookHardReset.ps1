@@ -119,3 +119,6 @@ function Invoke-AVDClassicOutlookHardReset {
         }
     }
 }
+
+# Executes the reset sequence
+Invoke-AVDClassicOutlookHardReset
