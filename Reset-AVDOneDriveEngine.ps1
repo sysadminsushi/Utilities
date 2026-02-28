@@ -64,3 +64,5 @@ function Reset-AVDOneDriveEngine {
         Write-Warning 'Could not find OneDrive.exe in expected locations. Please verify installation.'
     }
 }
+
+Reset-AVDOneDriveEngine
