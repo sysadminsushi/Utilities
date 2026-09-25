@@ -1,15 +1,11 @@
 <#
 .SYNOPSIS
     Resets and restarts the Microsoft OneDrive client (non-AVD).
-
 .DESCRIPTION
     Finds OneDrive.exe (per-user or per-machine), runs /reset, waits,
-    then starts OneDrive through explorer.exe so it runs as the desktop
-    user even if this script was elevated.
-
+    then starts OneDrive.
 .EXAMPLE
     Reset-OneDriveEngine
-
 .NOTES
     Author:  sysadminsushi
     Version: 9.25.2026
@@ -30,15 +26,6 @@ function Get-OneDriveExecutablePath {
     return $null
 }
 
-function Start-OneDriveAsStandardUser {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$OneDriveExecutablePath
-    )
-    Start-Process -FilePath "explorer.exe" -ArgumentList "`"$OneDriveExecutablePath`""
-}
-
 function Reset-OneDriveEngine {
     [CmdletBinding()]
     param()
@@ -47,13 +34,11 @@ function Reset-OneDriveEngine {
         Write-Warning "Could not find OneDrive.exe in expected locations."
         return
     }
-
     Write-Output "Resetting OneDrive: $oneDriveExecutablePath"
     Start-Process -FilePath $oneDriveExecutablePath -ArgumentList "/reset"
     Start-Sleep -Seconds 10
-
-    Write-Output "Starting OneDrive as the desktop user."
-    Start-OneDriveAsStandardUser -OneDriveExecutablePath $oneDriveExecutablePath
+    Write-Output "Starting OneDrive."
+    Start-Process "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"
 }
 
 Reset-OneDriveEngine
