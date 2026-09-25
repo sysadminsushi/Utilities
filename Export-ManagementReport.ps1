@@ -3,60 +3,65 @@
     Generates a timestamped CSV report from an input array.
 
 .DESCRIPTION
-    A standalone utility for management reporting. It ensures the target directory exists,
-    generates a unique filename using an optional report name and a high-precision 
-    timestamp, and exports the provided data array to a CSV.
+    Ensures the target directory exists, builds a unique filename from an
+    optional report name and a timestamp, and exports the data to CSV.
 
 .PARAMETER LogDirectory
-    The folder where the CSV will be saved. Created automatically if missing.
+    Folder where the CSV is saved. Created if it does not exist.
 
 .PARAMETER DataArray
-    The collection of objects to be exported to the CSV.
+    Objects to export.
 
 .PARAMETER ReportName
-    An optional string to identify the report type (e.g., "SharedMailboxes", "UserAudit").
-    This is inserted into the filename.
+    Optional label in the filename (for example SharedMailboxes).
 
 .EXAMPLE
     Export-ManagementReport -LogDirectory "C:\Logs" -DataArray $Results -ReportName "SharedMailboxes"
 
 .NOTES
-    Author: sysadminsushi
-    Version: 2.9.2026
+    Author:  sysadminsushi
+    Version: 9.24.2026
 #>
 function Export-ManagementReport {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$LogDirectory,
-        [Parameter(Mandatory)][array]$DataArray,
-        [Parameter(Mandatory=$false)][string]$ReportName
+        [Parameter(Mandatory)]
+        [string]$LogDirectory,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [array]$DataArray,
+
+        [string]$ReportName
     )
 
-    # Ensure the directory exists
-    if (-not (Test-Path $LogDirectory)) { 
-        New-Item -Path $LogDirectory -ItemType Directory -Force | Out-Null 
+    if (-not (Test-Path $LogDirectory)) {
+        New-Item -Path $LogDirectory -ItemType Directory -Force | Out-Null
     }
 
-    # Generate Timestamped Filename
-    $UniqueTimeStamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    
-    # Logic: If ReportName is provided, include it; otherwise, just use the timestamp.
-    if (-not [string]::IsNullOrWhiteSpace($ReportName)) {
-        $FileName = "Management_Report_$($ReportName)_$UniqueTimeStamp.csv"
+    $safeName = if ([string]::IsNullOrWhiteSpace($ReportName)) {
+        $null
     } else {
-        $FileName = "Management_Report_$UniqueTimeStamp.csv"
+        ($ReportName -replace '[\\/:*?"<>|]', '_')
     }
 
-    $ReportingPath = Join-Path $LogDirectory $FileName
+    $uniqueTimeStamp = Get-Date -Format "yyyyMMdd_HHmmssfff"
+    $fileName = if ($safeName) {
+        "Management_Report_${safeName}_$uniqueTimeStamp.csv"
+    } else {
+        "Management_Report_$uniqueTimeStamp.csv"
+    }
 
-    # Logic Execution & Export to csv
+    $reportingPath = Join-Path $LogDirectory $fileName
+
+    if ($null -eq $DataArray -or $DataArray.Count -eq 0) {
+        Write-Warning "The provided DataArray was empty. No CSV created."
+        return
+    }
+
     try {
-        if ($null -ne $DataArray -and $DataArray.Count -gt 0) {
-            $DataArray | Export-Csv -Path $ReportingPath -NoTypeInformation -Encoding UTF8 -Force
-            Write-Host "Success! Management report saved to: $ReportingPath" -ForegroundColor Green
-        } else {
-            Write-Warning "The provided DataArray was empty. No CSV created."
-        }
+        $DataArray | Export-Csv -Path $reportingPath -NoTypeInformation -Encoding UTF8 -Force
+        Write-Output $reportingPath
     }
     catch {
         Write-Error "An error occurred during export: $($_.Exception.Message)"
