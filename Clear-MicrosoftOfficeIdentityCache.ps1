@@ -3,22 +3,27 @@
     Clears the Office identity cache for the current user.
 
 .DESCRIPTION
-    Removes cached authentication tokens and identity data so that
-    Microsoft Office applications prompt for sign‑in again.
+    Stops common Office apps, then deletes the Office 16.0 Identity
+    registry key so apps prompt for sign-in again.
 
-.AUTHOR
-    sysadminsushi
-
-.VERSION
-    2.22.2026
+.NOTES
+    Author:  sysadminsushi
+    Version: 9.24.2026
 #>
-
-# Clears the Office identity cache by deleting the identity registry key for the current user.
 function Clear-MicrosoftOfficeIdentityCache {
+    Get-Process -Name WINWORD, EXCEL, POWERPNT, OUTLOOK, ONENOTE, MSACCESS -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
 
-    # Delete the Microsoft Office identity registry path for the current user
-    reg delete "HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Common\Identity" /f | Out-Null
+    $identityKeyPath = "HKCU:\Software\Microsoft\Office\16.0\Common\Identity"
+
+    if (-not (Test-Path $identityKeyPath)) {
+        Write-Output "Office identity key not found: $identityKeyPath"
+        return
+    }
+
+    Remove-Item -Path $identityKeyPath -Recurse -Force
+    Write-Output "Cleared Office identity cache: $identityKeyPath"
 }
 
-# Executes the Office identity cache clearing process
 Clear-MicrosoftOfficeIdentityCache
