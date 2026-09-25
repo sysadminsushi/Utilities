@@ -1,9 +1,8 @@
 <#
 .SYNOPSIS
-    Resets and restarts the Microsoft OneDrive client (non-AVD).
+    Resets the Microsoft OneDrive client (non-AVD).
 .DESCRIPTION
-    Finds OneDrive.exe (per-user or per-machine), runs /reset, waits,
-    then starts OneDrive.
+    Finds OneDrive.exe (per-user or per-machine) and runs /reset.
 .EXAMPLE
     Reset-OneDriveEngine
 .NOTES
@@ -36,9 +35,6 @@ function Reset-OneDriveEngine {
     }
     Write-Output "Resetting OneDrive: $oneDriveExecutablePath"
     Start-Process -FilePath $oneDriveExecutablePath -ArgumentList "/reset"
-    Start-Sleep -Seconds 10
-    Write-Output "Starting OneDrive."
-    Start-Process "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"
 }
 
 Reset-OneDriveEngine
