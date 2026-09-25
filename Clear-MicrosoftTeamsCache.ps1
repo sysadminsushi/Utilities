@@ -1,35 +1,29 @@
 <#
 .SYNOPSIS
-    Clears the Microsoft Teams (New Teams) cache for the current user.
+    Clears the new Microsoft Teams cache for the current user.
 
 .DESCRIPTION
-    Stops the Microsoft Teams process, verifies the cache directory exists,
-    and removes all cached data to ensure a clean restart.
+    Stops ms-teams, then deletes LocalCache under the MSTeams Store package.
+    Does not clear classic Teams (%APPDATA%\Microsoft\Teams).
 
-.AUTHOR
-    sysadminsushi
-
-.VERSION
-    2.22.2026
+.NOTES
+    Author:  sysadminsushi
+    Version: 9.24.2026
 #>
-
-# Clears the Microsoft Teams cache by stopping the process and removing cached data from the local cache directory.
 function Clear-MicrosoftTeamsCache {
+    Get-Process -Name "ms-teams" -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 3
 
-    # Stop Microsoft Teams if it is currently running
-    Get-Process -Name "ms-teams" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
-
-    # Define the Microsoft Teams cache directory path
     $teamsCacheDirectoryPath = Join-Path $env:LOCALAPPDATA "Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams"
 
-    # Remove all cached Teams data if the directory exists
-    if (Test-Path $teamsCacheDirectoryPath) {
-        try {
-            Remove-Item -Path "$teamsCacheDirectoryPath\*" -Recurse -Force -ErrorAction SilentlyContinue
-        } catch {}
+    if (-not (Test-Path $teamsCacheDirectoryPath)) {
+        Write-Output "Teams cache path not found: $teamsCacheDirectoryPath"
+        return
     }
+
+    Remove-Item -Path (Join-Path $teamsCacheDirectoryPath "*") -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Output "Cleared Teams cache: $teamsCacheDirectoryPath"
 }
 
-# Executes the Teams cache clearing process
 Clear-MicrosoftTeamsCache
